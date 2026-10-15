@@ -17,6 +17,12 @@ UPDATE_INTERVAL_MS = 50
 
 AUDIO_QUEUE_SIZE = 32
 
+# Advanced live features
+RECORDINGS_DIR = "recordings"
+MONITOR_GAIN = 1.0
+MONITOR_DEFAULT_ON = False
+VOICE_DEFAULT = "off"
+
 
 def apply_style(plt) -> None:
     """Apply global matplotlib theme. Takes plt module to avoid import cycle."""

@@ -39,3 +39,6 @@ Desktop.ini
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+
+# Generated recordings (created at runtime by SAVE WAV)
+recordings/

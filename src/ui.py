@@ -21,6 +21,11 @@ class AnalyzerUI:
     peak_value: object
     status_text: object
     reset_button: object
+    hear_button: object
+    voice_button: object
+    rec_button: object
+    save_button: object
+    mode_text: object
 
 
 def build_axes(freqs: np.ndarray, time_axis: np.ndarray, wave_buffer: np.ndarray):
@@ -71,8 +76,25 @@ def build_axes(freqs: np.ndarray, time_axis: np.ndarray, wave_buffer: np.ndarray
     frequency_value = fig.text(0.31, 0.855, "DOMINANT FREQ  —", fontsize=10, color=config.TEXT)
     peak_value = fig.text(0.61, 0.855, "PEAK HOLD  —", fontsize=10, color=config.TEXT)
     status_text = fig.text(
-        0.065, 0.055, "Waiting for microphone audio…", fontsize=9, color=config.MUTED
+        0.065, 0.105, "Waiting for microphone audio…", fontsize=9, color=config.MUTED
     )
+    mode_text = fig.text(
+        0.965, 0.105, "MONITOR OFF  ·  VOICE OFF  ·  READY",
+        fontsize=9, color=config.MUTED, ha="right",
+    )
+
+    def _make_button(rect, label):
+        bax = fig.add_axes(rect)
+        bax.set_facecolor(config.PANEL)
+        btn = Button(bax, label, color=config.PANEL, hovercolor=config.GRID)
+        btn.label.set_color(config.TEXT)
+        btn.label.set_fontsize(9)
+        return btn
+
+    hear_button = _make_button([0.065, 0.035, 0.13, 0.05], "HEARING: OFF")
+    voice_button = _make_button([0.21, 0.035, 0.15, 0.05], "VOICE: OFF")
+    rec_button = _make_button([0.375, 0.035, 0.11, 0.05], "● REC")
+    save_button = _make_button([0.50, 0.035, 0.12, 0.05], "SAVE WAV")
 
     button_ax = fig.add_axes([0.81, 0.035, 0.155, 0.05])
     button_ax.set_facecolor(config.PANEL)
@@ -80,7 +102,9 @@ def build_axes(freqs: np.ndarray, time_axis: np.ndarray, wave_buffer: np.ndarray
     reset_button.label.set_color(config.TEXT)
     reset_button.label.set_fontsize(9)
 
-    return fig, ax_wave, ax_fft, wave_line, fft_line, rms_value, frequency_value, peak_value, status_text, reset_button
+    return (fig, ax_wave, ax_fft, wave_line, fft_line, rms_value,
+            frequency_value, peak_value, status_text, reset_button,
+            hear_button, voice_button, rec_button, save_button, mode_text)
 
 
 def create_ui(engine) -> AnalyzerUI:
@@ -91,7 +115,8 @@ def create_ui(engine) -> AnalyzerUI:
     freqs = np.fft.rfftfreq(config.FFT_SIZE, d=1 / config.SAMPLE_RATE)
     parts = build_axes(freqs, time_axis, engine.wave_buffer)
     (fig, ax_wave, ax_fft, wave_line, fft_line, rms_value,
-     frequency_value, peak_value, status_text, reset_button) = parts
+     frequency_value, peak_value, status_text, reset_button,
+     hear_button, voice_button, rec_button, save_button, mode_text) = parts
     reset_button.on_clicked(lambda _event: engine.reset_peak())
     # Stash freqs on figure for the animation loop without globals.
     fig._analyzer_freqs = freqs
@@ -100,5 +125,7 @@ def create_ui(engine) -> AnalyzerUI:
         wave_line=wave_line, fft_line=fft_line,
         rms_value=rms_value, frequency_value=frequency_value,
         peak_value=peak_value, status_text=status_text,
-        reset_button=reset_button,
+        reset_button=reset_button, hear_button=hear_button,
+        voice_button=voice_button, rec_button=rec_button,
+        save_button=save_button, mode_text=mode_text,
     )
