@@ -22,6 +22,7 @@ RECORDINGS_DIR = "recordings"
 MONITOR_GAIN = 1.0
 MONITOR_DEFAULT_ON = False
 VOICE_DEFAULT = "off"
+DENOISE_DEFAULT_ON = False
 
 
 def apply_style(plt) -> None:

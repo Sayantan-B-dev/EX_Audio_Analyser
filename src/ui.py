@@ -23,6 +23,7 @@ class AnalyzerUI:
     reset_button: object
     hear_button: object
     voice_button: object
+    clean_button: object
     rec_button: object
     save_button: object
     mode_text: object
@@ -79,7 +80,7 @@ def build_axes(freqs: np.ndarray, time_axis: np.ndarray, wave_buffer: np.ndarray
         0.065, 0.105, "Waiting for microphone audio…", fontsize=9, color=config.MUTED
     )
     mode_text = fig.text(
-        0.965, 0.105, "MONITOR OFF  ·  VOICE OFF  ·  READY",
+        0.965, 0.105, "MONITOR OFF  ·  VOICE OFF  ·  CLEAN OFF  ·  READY",
         fontsize=9, color=config.MUTED, ha="right",
     )
 
@@ -95,6 +96,7 @@ def build_axes(freqs: np.ndarray, time_axis: np.ndarray, wave_buffer: np.ndarray
     voice_button = _make_button([0.21, 0.035, 0.15, 0.05], "VOICE: OFF")
     rec_button = _make_button([0.375, 0.035, 0.11, 0.05], "● REC")
     save_button = _make_button([0.50, 0.035, 0.12, 0.05], "SAVE WAV")
+    clean_button = _make_button([0.635, 0.035, 0.15, 0.05], "CLEAN: OFF")
 
     button_ax = fig.add_axes([0.81, 0.035, 0.155, 0.05])
     button_ax.set_facecolor(config.PANEL)
@@ -104,7 +106,8 @@ def build_axes(freqs: np.ndarray, time_axis: np.ndarray, wave_buffer: np.ndarray
 
     return (fig, ax_wave, ax_fft, wave_line, fft_line, rms_value,
             frequency_value, peak_value, status_text, reset_button,
-            hear_button, voice_button, rec_button, save_button, mode_text)
+            hear_button, voice_button, rec_button, save_button,
+            clean_button, mode_text)
 
 
 def create_ui(engine) -> AnalyzerUI:
@@ -116,7 +119,8 @@ def create_ui(engine) -> AnalyzerUI:
     parts = build_axes(freqs, time_axis, engine.wave_buffer)
     (fig, ax_wave, ax_fft, wave_line, fft_line, rms_value,
      frequency_value, peak_value, status_text, reset_button,
-     hear_button, voice_button, rec_button, save_button, mode_text) = parts
+     hear_button, voice_button, rec_button, save_button,
+     clean_button, mode_text) = parts
     reset_button.on_clicked(lambda _event: engine.reset_peak())
     # Stash freqs on figure for the animation loop without globals.
     fig._analyzer_freqs = freqs
@@ -127,5 +131,6 @@ def create_ui(engine) -> AnalyzerUI:
         peak_value=peak_value, status_text=status_text,
         reset_button=reset_button, hear_button=hear_button,
         voice_button=voice_button, rec_button=rec_button,
-        save_button=save_button, mode_text=mode_text,
+        save_button=save_button, clean_button=clean_button,
+        mode_text=mode_text,
     )

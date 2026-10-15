@@ -8,25 +8,29 @@ from . import dsp
 from .audio_engine import AudioEngine
 from .monitor import LiveMonitor
 from .voice import VoiceChanger
+from .denoise import AdaptiveDenoiser
 from .recorder import Recorder
 from .pipeline import LivePipeline
 from .ui import create_ui
 
 
 def _mode_line(monitor: LiveMonitor, voice: VoiceChanger, recorder: Recorder,
-               engine: AudioEngine) -> str:
+               denoiser: AdaptiveDenoiser, engine: AudioEngine) -> str:
     mon = f"MONITOR {monitor.label}"
     vox = f"VOICE {voice.name.upper()}"
+    cln = (f"CLEAN ON {denoiser.learned_seconds:.0f}s" if denoiser.enabled
+           else f"CLEAN OFF ({denoiser.learned_seconds:.0f}s learned)")
     if recorder.recording:
         rec = f"● REC {recorder.blocks} blocks"
     elif recorder.has_audio():
         rec = f"READY ({recorder.blocks} blocks, S to save)"
     else:
         rec = "READY"
-    return f"{mon}  ·  {vox}  ·  {rec}"
+    return f"{mon}  ·  {vox}  ·  {cln}  ·  {rec}"
 
 
-def update(_frame, engine: AudioEngine, ui, monitor, voice, recorder) -> tuple:
+def update(_frame, engine: AudioEngine, ui, monitor, voice, recorder,
+           denoiser) -> tuple:
     """FuncAnimation callback. Drains audio, refreshes plots/texts."""
 
     freqs = ui.fig._analyzer_freqs
@@ -62,7 +66,7 @@ def update(_frame, engine: AudioEngine, ui, monitor, voice, recorder) -> tuple:
             f"Waiting for microphone audio…  {engine.last_status}"
         )
 
-    ui.mode_text.set_text(_mode_line(monitor, voice, recorder, engine))
+    ui.mode_text.set_text(_mode_line(monitor, voice, recorder, denoiser, engine))
 
     return (
         ui.wave_line, ui.fft_line, ui.rms_value,
@@ -71,16 +75,20 @@ def update(_frame, engine: AudioEngine, ui, monitor, voice, recorder) -> tuple:
 
 
 def _attach_controls(ui, monitor: LiveMonitor, voice: VoiceChanger,
-                     recorder: Recorder, engine: AudioEngine) -> None:
+                     recorder: Recorder, denoiser: AdaptiveDenoiser,
+                     engine: AudioEngine) -> None:
     """Wire buttons + keyboard shortcuts to the live modules."""
 
     def refresh_buttons() -> None:
         ui.hear_button.label.set_text(
             f"HEARING: {'ON' if monitor.enabled else 'OFF'}")
         ui.voice_button.label.set_text(f"VOICE: {voice.name.upper()}")
+        ui.clean_button.label.set_text(
+            f"CLEAN: {'ON' if denoiser.enabled else 'OFF'}")
         ui.rec_button.label.set_text(
             "■ STOP" if recorder.recording else "● REC")
-        ui.mode_text.set_text(_mode_line(monitor, voice, recorder, engine))
+        ui.mode_text.set_text(
+            _mode_line(monitor, voice, recorder, denoiser, engine))
 
     def toggle_hearing(_event=None) -> None:
         monitor.toggle()
@@ -99,6 +107,12 @@ def _attach_controls(ui, monitor: LiveMonitor, voice: VoiceChanger,
             print(f"Recording stopped ({recorder.blocks} blocks). Press SAVE.")
         refresh_buttons()
 
+    def toggle_noise(_event=None) -> None:
+        on = denoiser.toggle()
+        print(f"Noise cleanup {'ON' if on else 'OFF'} "
+              f"(trained on {denoiser.learned_seconds:.1f}s of background)")
+        refresh_buttons()
+
     def save_wav(_event=None) -> None:
         path = recorder.save(config.RECORDINGS_DIR, config.SAMPLE_RATE,
                              effect=voice.name)
@@ -110,6 +124,7 @@ def _attach_controls(ui, monitor: LiveMonitor, voice: VoiceChanger,
 
     ui.hear_button.on_clicked(toggle_hearing)
     ui.voice_button.on_clicked(cycle_voice)
+    ui.clean_button.on_clicked(toggle_noise)
     ui.rec_button.on_clicked(toggle_rec)
     ui.save_button.on_clicked(save_wav)
 
@@ -119,6 +134,8 @@ def _attach_controls(ui, monitor: LiveMonitor, voice: VoiceChanger,
             toggle_hearing()
         elif key == "v":
             cycle_voice()
+        elif key == "n":
+            toggle_noise()
         elif key == "r":
             toggle_rec()
         elif key == "s":
@@ -135,16 +152,19 @@ def main() -> None:
     voice = VoiceChanger(effect=config.VOICE_DEFAULT,
                          sample_rate=config.SAMPLE_RATE)
     recorder = Recorder()
-    pipeline = LivePipeline(engine, monitor, voice, recorder)
+    denoiser = AdaptiveDenoiser(sample_rate=config.SAMPLE_RATE,
+                                frame_size=config.BLOCK_SIZE,
+                                enabled=config.DENOISE_DEFAULT_ON)
+    pipeline = LivePipeline(engine, monitor, voice, recorder, denoiser)
     ui = create_ui(engine)
-    _attach_controls(ui, monitor, voice, recorder, engine)
+    _attach_controls(ui, monitor, voice, recorder, denoiser, engine)
 
-    print("Keys: H hearing · V voice fx · R record · S save WAV")
+    print("Keys: H hearing · V voice fx · N noise cleanup · R record · S save WAV")
     try:
         with pipeline.open_stream():
             animation = FuncAnimation(
                 ui.fig, update,
-                fargs=(engine, ui, monitor, voice, recorder),
+                fargs=(engine, ui, monitor, voice, recorder, denoiser),
                 interval=config.UPDATE_INTERVAL_MS,
                 blit=False,
                 cache_frame_data=False,
