@@ -1,0 +1,41 @@
+# Python junks
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+
+# Env / secrets
+.env
+.env.*
+
+# OS junks
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Pytest / coverage / type checkers
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
