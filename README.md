@@ -46,6 +46,8 @@ python main.py
 Grant microphone permission when the OS asks. If no output device is
 available the app falls back to mic-only mode and disables hearing.
 
+![](./demo.png)
+
 ## Controls
 
 Buttons sit in the bottom bar, each has a keyboard shortcut:
